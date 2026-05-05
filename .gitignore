@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+
+# Env
+.env
+.venv
+quant_bot/
+
+# Logs
+logs/
+
+# OS
+.DS_Store
