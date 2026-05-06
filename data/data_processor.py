@@ -1,13 +1,12 @@
 import pandas as pd
 
-
-def process_data(df):
+def process_data(df, params):
     df = df.copy()
-
+    window = params['window']
 
     df['return'] = df['Close'].pct_change()
-    df['volatility'] = df['Return'].rolling(window=30).std()
+    df['volatility'] = df['return'].rolling(window=window).std()
 
-    df = df.dropna()
+    df = df.dropna(subset=['return', 'volatility'])
     
     return df
