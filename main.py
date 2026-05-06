@@ -9,6 +9,8 @@ from strategies.volatility_strategy import VolatilityStrategy
 from strategies.volatility_config import PARAMS
 from core.engine import TradingEngine
 from execution.executor import Executor
+from database.db import init_db
+from database.repository.trade_repository import TradeRepository
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,24 +24,24 @@ logging.basicConfig(
 data = load_data(SYMBOL, PERIOD, TIMEFRAME)
 
 if data is None or data.empty:
-    logging.warning('No se pudieron cargar los datos')
+    logging.warning('Data could not be loaded')
     exit()
 
 data = process_data(data, PARAMS)
 
 if data is None or data.empty:
-        logging.warning("No hay datos suficientes para estrategia")
+        logging.warning("There is not enough data for the strategy")
         exit()
-
-logging.info(f"Data length after processing: {len(data)}")
 
 strategy = VolatilityStrategy(PARAMS)
 
-executor = Executor()
-engine = TradingEngine(strategy, executor)
-signal = engine.run(data)
+init_db()
 
-logging.info(f"Signal generated: {signal}")
+repository = TradeRepository()
+executor = Executor(repository)
 
-print(data.tail())
-print(f"Signal: {signal}")
+engine = TradingEngine(strategy, executor, repository)
+signal = engine.run(data, SYMBOL)
+
+logging.info(f"\n{data.tail()}")
+logging.info(f"Signal: {signal}")
