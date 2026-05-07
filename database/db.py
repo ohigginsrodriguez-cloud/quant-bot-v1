@@ -19,7 +19,10 @@ def init_db():
         action TEXT,
         price REAL,
         timestamp TEXT,
-        status TEXT)
+        status TEXT,
+        close_price REAL,
+        close_timestamp TEXT,
+        pnl REAL)
         """
     )
 

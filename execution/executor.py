@@ -23,10 +23,13 @@ class Executor:
                 logging.info("No open trade to close")
                 return
             
-            logging.info("Executing SELL order")
+            trade_id = open_trade[0] #id
+            entry_price = open_trade[3]
 
-            # Aquí luego cerraremos el trade (siguiente paso)
-            # por ahora solo log
+            pnl = price - entry_price
+            
+            logging.info(f"Closing trade with PnL: {pnl}")
+            self.repository.close_trade(trade_id, price, pnl)
             
         else:
             logging.info("No action")

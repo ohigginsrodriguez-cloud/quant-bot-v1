@@ -51,3 +51,21 @@ class TradeRepository:
         conn.close()
 
         return rows
+    
+    def close_trade(self, trade_id, close_price, pnl):
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE trades
+            SET status = 'CLOSED',
+            close_price = ?,
+            close_timestamp = CURRENT_TIMESTAMP,
+            pnl = ?
+            WHERE id = ?
+            """, (close_price, pnl, trade_id)
+        )
+
+        conn.commit()
+        conn.close()
