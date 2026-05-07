@@ -1,4 +1,4 @@
 PARAMS = {
-    'threshold': 2.4,
+    'threshold': 0.001,
     'window': 30
 }

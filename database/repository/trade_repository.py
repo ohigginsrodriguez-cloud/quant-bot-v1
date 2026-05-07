@@ -9,13 +9,23 @@ class TradeRepository:
 
         cursor.execute(
             """
-            INSERT INTO trades (symbol, action, price, timestamp, status)
-            VALUES (?, ?, ?, ?, ?)
-            """, (trade.symbol, trade.action, trade.price, str(trade.timestamp), trade.status)
+            INSERT INTO trades (symbol, side, size, entry_price, entry_timestamp, status, exit_price, exit_timestamp, pnl)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (trade.symbol,
+                  trade.side,
+                  trade.size,
+                  trade.entry_price,
+                  trade.entry_timestamp.isoformat(),
+                  trade.status,
+                  trade.exit_price,
+                  trade.exit_timestamp.isoformat() if trade.exit_timestamp else None,
+                  trade.pnl
+                  )
         )
+
         conn.commit()
         conn.close()
-        logging.info(f"Saving trade: {trade.action} {trade.symbol}")
+        logging.info(f"Saving trade: {trade.side} {trade.symbol}")
 
 
     def get_open_trade(self, symbol):
@@ -33,7 +43,6 @@ class TradeRepository:
 
         row = cursor.fetchone()
         conn.close()
-
         return row # None si no hay
     
     def get_open_trades(self):
@@ -52,7 +61,7 @@ class TradeRepository:
 
         return rows
     
-    def close_trade(self, trade_id, close_price, pnl):
+    def close_trade(self, trade_id, exit_price, pnl):
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -60,11 +69,11 @@ class TradeRepository:
             """
             UPDATE trades
             SET status = 'CLOSED',
-            close_price = ?,
-            close_timestamp = CURRENT_TIMESTAMP,
+            exit_price = ?,
+            exit_timestamp = CURRENT_TIMESTAMP,
             pnl = ?
             WHERE id = ?
-            """, (close_price, pnl, trade_id)
+            """, (exit_price, pnl, trade_id)
         )
 
         conn.commit()

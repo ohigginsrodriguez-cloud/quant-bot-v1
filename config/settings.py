@@ -16,6 +16,8 @@ def create_directories():
     # mkdir para crear la carpeta 
     # exit_ok=True para que no de error si ya existe
     LOG_DIR.mkdir(parents=True ,exist_ok=True) # parents=True crea la ruta si falta algo
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # os.getenv() para variables de entorno
 # TRADING CONFIG
