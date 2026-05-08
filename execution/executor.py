@@ -75,7 +75,7 @@ class Executor:
                 return
 
             #MISMA DIRECCIÓN
-            logging.info("Already in position, skipping")
+            logging.info(f"Already in {side}, skipping")
             return
 
         #NO HAY TRADE ABIERTO
@@ -104,5 +104,5 @@ class Executor:
 
             size = round(size, 2)
             price = round(price, 5)
-            
+
             self.repository.save(trade)
