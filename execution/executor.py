@@ -5,10 +5,12 @@ from core.positions import SHORT, LONG
 import logging
 
 class Executor:
-    def __init__(self, repository):
+    def __init__(self, repository, risk_manager, account):
         self.repository = repository
+        self.risk_manager = risk_manager
+        self.account = account
 
-    def execute(self, signal, price, symbol):
+    def execute(self, signal, price, symbol, stop_loss):
         open_trade = self.repository.get_open_trade(symbol)
 
         if signal == HOLD:
@@ -16,14 +18,17 @@ class Executor:
             return
         
         if open_trade is None:
+            size = self.risk_manager.calculate_position_size(self.account.balance, price, stop_loss)
             if signal == BUY:
-                logging.info("Opening LONG")
-                trade = Trade(symbol=symbol, side=LONG, size=1, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN")
+                logging.info(f"Opening LONG | Size: {size:.2f}")
+                trade = Trade(symbol=symbol, side=LONG, size=size, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN", stop_loss=stop_loss)
                 self.repository.save(trade)
 
             elif signal == SELL:
-                logging.info("Opening SHORT")
-                trade = Trade(symbol=symbol, side=SHORT, size=1, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN")
+                stop_loss_price = price * 1.01
+                size = self.risk_manager.calculate_position_size(self.account.balance, price, stop_loss)
+                logging.info(f"Opening SHORT | Size: {size:.2f}")
+                trade = Trade(symbol=symbol, side=SHORT, size=size, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN", stop_loss=stop_loss)
                 self.repository.save(trade)
 
             return
@@ -35,23 +40,29 @@ class Executor:
         size = open_trade['size']
 
         if side == LONG and signal == SELL:
+            size = open_trade['size']
             pnl = (price - entry_price) * size
             logging.info(f"Closing LONG with PnL: {pnl:.3f}")
             self.repository.close_trade(trade_id, price, pnl)
+            self.account.update_balance(pnl)
 
             # abrir short inmediatamente
-            logging.info("Reversing to SHORT")
-            new_trade = Trade(symbol=symbol, side=SHORT, size=1, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN")
+            size = self.risk_manager.calculate_position_size(self.account.balance, price, stop_loss)
+            logging.info(f"Reversing to SHORT | size: {size:.2f}")
+            new_trade = Trade(symbol=symbol, side=SHORT, size=size, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN", stop_loss=stop_loss)
             self.repository.save(new_trade)
 
         elif side == SHORT and signal == BUY:
+            size = open_trade['size']
             pnl = (entry_price - price) * size
             logging.info(f"Closing SHORT with PnL: {pnl:.3f}")
             self.repository.close_trade(trade_id, price, pnl)
+            self.account.update_balance(pnl)
 
             # abrir long inmediatamente
-            logging.info("Reversing to LONG")
-            new_trade = Trade(symbol=symbol, side=LONG, size=1, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN")
+            size = self.risk_manager.calculate_position_size(self.account.balance, price, stop_loss)
+            logging.info(f"Reversing to LONG | Size: {size:.2f}")
+            new_trade = Trade(symbol=symbol, side=LONG, size=size, entry_price=price, entry_timestamp=datetime.now(UTC), status="OPEN", stop_loss=stop_loss)
             self.repository.save(new_trade)
 
         elif side == LONG and signal == BUY:

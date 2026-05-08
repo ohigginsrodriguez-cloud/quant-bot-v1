@@ -9,7 +9,9 @@ class TradingEngine:
         self.repository = repository
 
     def run(self, data, symbol):
-        signal = self.strategy.generate_signal(data)
+        result = self.strategy.generate_signal(data)
+        signal = result['signal']
+        stop_loss = result['stop_loss']
         
         price = data['Close'].iloc[-1]
 
@@ -22,6 +24,6 @@ class TradingEngine:
                 logging.info("Max positions reached, skipping trade")
                 return signal
             
-        self.executor.execute(signal, price, symbol)
+        self.executor.execute(signal, price, symbol, stop_loss)
 
         return signal

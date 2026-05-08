@@ -11,6 +11,7 @@ from execution.executor import Executor
 from database.db import init_db
 from database.repository.trade_repository import TradeRepository
 from risk.risk_manager import RiskManager
+from portfolio.account import Account
 
 create_directories()
 
@@ -24,6 +25,7 @@ logging.basicConfig(
 )
 
 data = load_data(SYMBOL, PERIOD, TIMEFRAME)
+account = Account(initial_balance=10000)
 
 if data is None or data.empty:
     logging.warning('Data could not be loaded')
@@ -35,10 +37,9 @@ init_db()
 risk_manager = RiskManager()
 
 repository = TradeRepository()
-executor = Executor(repository)
+executor = Executor(repository, risk_manager, account)
 
 engine = TradingEngine(strategy, risk_manager, executor, repository)
 signal = engine.run(data, SYMBOL)
 
-logging.info(f"\n{data.tail()}")
 logging.info(f"Signal: {signal}")

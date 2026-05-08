@@ -1,6 +1,6 @@
 class Trade:
     def __init__(self, symbol, side, size, entry_price, entry_timestamp, status="OPEN", 
-                 exit_price=None, exit_timestamp=None, pnl=None):
+                 exit_price=None, exit_timestamp=None, pnl=None, stop_loss=None):
         self.symbol = symbol
         self.side = side        #LONG o SHORT
         self.size = size
@@ -10,3 +10,4 @@ class Trade:
         self.exit_price = exit_price
         self.exit_timestamp = exit_timestamp
         self.pnl = pnl
+        self.stop_loss = stop_loss
