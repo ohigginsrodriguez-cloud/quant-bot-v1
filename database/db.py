@@ -26,7 +26,8 @@ def init_db():
         exit_price REAL,
         exit_timestamp TEXT,
         pnl REAL,
-        stop_loss REAL
+        stop_loss REAL,
+        take_profit REAL
         )
         """
     )

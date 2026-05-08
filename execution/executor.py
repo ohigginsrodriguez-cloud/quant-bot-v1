@@ -10,7 +10,7 @@ class Executor:
         self.risk_manager = risk_manager
         self.account = account
 
-    def execute(self, signal, price, symbol, stop_loss):
+    def execute(self, signal, price, symbol, stop_loss, take_profit):
         open_trade = self.repository.get_open_trade(symbol)
 
         # SI HAY TRADE ABIERTO
@@ -20,8 +20,9 @@ class Executor:
             entry_price = open_trade["entry_price"]
             size = open_trade["size"]
             stop_loss_db = open_trade["stop_loss"]
+            take_profit_db = open_trade["take_profit"]
 
-            # STOP LOSS
+            # STOP LOSS LONG
             if side == LONG and price <= stop_loss_db:
                 pnl = (price - entry_price) * size
                 logging.info(f"STOP LOSS HIT (LONG) | PnL: {pnl:.3f}")
@@ -29,9 +30,26 @@ class Executor:
                 self.account.update_balance(pnl)
                 return
 
+            #STOP LOSS SHORT
             if side == SHORT and price >= stop_loss_db:
                 pnl = (entry_price - price) * size
                 logging.info(f"STOP LOSS HIT (SHORT) | PnL: {pnl:.3f}")
+                self.repository.close_trade(trade_id, price, pnl)
+                self.account.update_balance(pnl)
+                return
+            
+            #TAKE PROFIT LONG
+            if take_profit_db is not None and side == LONG and price >= take_profit_db:
+                pnl = (price - entry_price) * size
+                logging.info(f"TAKE PROFIT HIT (LONG) | PnL {pnl:.3f}")
+                self.repository.close_trade(trade_id, price, pnl)
+                self.account.update_balance(pnl)
+                return
+            
+            #TAKE PROFIT SHORT
+            if take_profit_db is not None and side == SHORT and price <= take_profit_db:
+                pnl = (entry_price - price) * size
+                logging.info(f"TAKE PROFIT HIT (SHORT) | PnL: {pnl:.3f}")
                 self.repository.close_trade(trade_id, price, pnl)
                 self.account.update_balance(pnl)
                 return
@@ -54,7 +72,7 @@ class Executor:
                 size = round(size, 2)
                 price = round(price, 5)
 
-                new_trade = Trade(symbol, SHORT, new_size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss)
+                new_trade = Trade(symbol, SHORT, new_size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss, take_profit=take_profit)
                 self.repository.save(new_trade)
                 return
 
@@ -70,7 +88,7 @@ class Executor:
                 size = round(size, 2)
                 price = round(price, 5)
 
-                new_trade = Trade(symbol, LONG, new_size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss)
+                new_trade = Trade(symbol, LONG, new_size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss, take_profit=take_profit)
                 self.repository.save(new_trade)
                 return
 
@@ -91,18 +109,18 @@ class Executor:
 
         if signal == BUY:
             logging.info(f"Opening LONG | Size: {size:.2f}")
-            trade = Trade(symbol, LONG, size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss)
 
             size = round(size, 2)
             price = round(price, 5)
-            
+
+            trade = Trade(symbol, LONG, size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss, take_profit=take_profit)
             self.repository.save(trade)
 
         elif signal == SELL:
             logging.info(f"Opening SHORT | Size: {size:.2f}")
-            trade = Trade(symbol, SHORT, size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss)
 
             size = round(size, 2)
             price = round(price, 5)
 
+            trade = Trade(symbol, SHORT, size, price, datetime.now(UTC), "OPEN", stop_loss=stop_loss, take_profit=take_profit)
             self.repository.save(trade)

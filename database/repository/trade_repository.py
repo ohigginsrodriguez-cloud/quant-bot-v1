@@ -9,8 +9,8 @@ class TradeRepository:
 
         cursor.execute(
             """
-            INSERT INTO trades (symbol, side, size, entry_price, entry_timestamp, status, exit_price, exit_timestamp, pnl, stop_loss)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO trades (symbol, side, size, entry_price, entry_timestamp, status, exit_price, exit_timestamp, pnl, stop_loss, take_profit)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (trade.symbol,
                   trade.side,
                   trade.size,
@@ -20,7 +20,8 @@ class TradeRepository:
                   trade.exit_price,
                   trade.exit_timestamp.isoformat() if trade.exit_timestamp else None,
                   trade.pnl,
-                  trade.stop_loss
+                  trade.stop_loss,
+                  trade.take_profit
                   )
         )
 
