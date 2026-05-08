@@ -15,11 +15,12 @@ class VolatilityStrategy(BaseStrategy):
         volatility = calculate_volatility(df['Close'], window)
         last_vol = volatility.iloc[-1]
         price = df['Close'].iloc[-1]
+        vol = volatility.iloc[-1]
 
         if last_vol > threshold:
 
-            stop_loss = price - 0.002  # ~20 pips (LONG)
-            take_profit = price + 0.004 #RR 1:2
+            stop_loss = price - vol
+            take_profit = price + (vol * 2)
 
             return {
                 "signal": BUY,

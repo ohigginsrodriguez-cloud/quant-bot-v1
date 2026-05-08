@@ -80,3 +80,18 @@ class TradeRepository:
 
         conn.commit()
         conn.close()
+
+    def update_stop_loss(self, trade_id, new_sl):
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE trades
+            SET stop_loss = ?
+            WHERE id = ?
+            """, (new_sl, trade_id)
+        )
+
+        conn.commit()
+        conn.close()

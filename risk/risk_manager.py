@@ -15,4 +15,6 @@ class RiskManager:
             return 0
         
         size = risk_amount / risk_per_unit
-        return size
+
+        max_size = balance * 10
+        return min(size, max_size)

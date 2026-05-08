@@ -12,6 +12,7 @@ from database.db import init_db
 from database.repository.trade_repository import TradeRepository
 from risk.risk_manager import RiskManager
 from portfolio.account import Account
+from core.exit_manager import Exitmanager
 
 create_directories()
 
@@ -25,20 +26,18 @@ logging.basicConfig(
 )
 
 data = load_data(SYMBOL, PERIOD, TIMEFRAME)
-account = Account(initial_balance=10000)
 
 if data is None or data.empty:
     logging.warning('Data could not be loaded')
     exit()
 
-strategy = VolatilityStrategy(PARAMS)
-
 init_db()
+account = Account(initial_balance=10000)
+strategy = VolatilityStrategy(PARAMS)
 risk_manager = RiskManager()
-
 repository = TradeRepository()
-executor = Executor(repository, risk_manager, account)
-
+exit_manager = Exitmanager()
+executor = Executor(repository, risk_manager, account, exit_manager)
 engine = TradingEngine(strategy, risk_manager, executor, repository)
 signal = engine.run(data, SYMBOL)
 

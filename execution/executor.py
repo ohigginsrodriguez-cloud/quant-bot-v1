@@ -5,51 +5,38 @@ from core.positions import SHORT, LONG
 import logging
 
 class Executor:
-    def __init__(self, repository, risk_manager, account):
+    def __init__(self, repository, risk_manager, account, exit_manager):
         self.repository = repository
         self.risk_manager = risk_manager
         self.account = account
+        self.exit_manager = exit_manager
 
     def execute(self, signal, price, symbol, stop_loss, take_profit):
         open_trade = self.repository.get_open_trade(symbol)
 
         # SI HAY TRADE ABIERTO
         if open_trade:
+            open_trade = dict(open_trade)
             trade_id = open_trade["id"]
             side = open_trade["side"]
             entry_price = open_trade["entry_price"]
             size = open_trade["size"]
-            stop_loss_db = open_trade["stop_loss"]
-            take_profit_db = open_trade["take_profit"]
 
-            # STOP LOSS LONG
-            if side == LONG and price <= stop_loss_db:
-                pnl = (price - entry_price) * size
-                logging.info(f"STOP LOSS HIT (LONG) | PnL: {pnl:.3f}")
-                self.repository.close_trade(trade_id, price, pnl)
-                self.account.update_balance(pnl)
-                return
+            new_sl = self.exit_manager.update_trailing_stop(open_trade, price)
 
-            #STOP LOSS SHORT
-            if side == SHORT and price >= stop_loss_db:
-                pnl = (entry_price - price) * size
-                logging.info(f"STOP LOSS HIT (SHORT) | PnL: {pnl:.3f}")
-                self.repository.close_trade(trade_id, price, pnl)
-                self.account.update_balance(pnl)
-                return
-            
-            #TAKE PROFIT LONG
-            if take_profit_db is not None and side == LONG and price >= take_profit_db:
-                pnl = (price - entry_price) * size
-                logging.info(f"TAKE PROFIT HIT (LONG) | PnL {pnl:.3f}")
-                self.repository.close_trade(trade_id, price, pnl)
-                self.account.update_balance(pnl)
-                return
-            
-            #TAKE PROFIT SHORT
-            if take_profit_db is not None and side == SHORT and price <= take_profit_db:
-                pnl = (entry_price - price) * size
-                logging.info(f"TAKE PROFIT HIT (SHORT) | PnL: {pnl:.3f}")
+            #SOLO ACTUALIZA SI CAMBIO
+            if new_sl !=open_trade['stop_loss']:
+                logging.info(f"Updating trailing SL: {open_trade['stop_loss']} -> {new_sl}")
+                self.repository.update_stop_loss(trade_id, new_sl)
+
+                #ACTUALIZAR TAMBIEN EN MEMORIA
+                open_trade['stop_loss'] = new_sl
+
+            exit_type, pnl = self.exit_manager.check_exit(open_trade, price)
+
+            #SL Y TP
+            if exit_type:
+                logging.info(f"{exit_type} HIT | PnL: {pnl:.3f}")
                 self.repository.close_trade(trade_id, price, pnl)
                 self.account.update_balance(pnl)
                 return
