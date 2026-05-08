@@ -10,7 +10,7 @@ class TradeRepository:
         cursor.execute(
             """
             INSERT INTO trades (symbol, side, size, entry_price, entry_timestamp, status, exit_price, exit_timestamp, pnl, stop_loss)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (trade.symbol,
                   trade.side,
                   trade.size,
