@@ -1,3 +1,4 @@
+from indicators.atr import calculate_atr
 import logging
 
 class TradingEngine:
@@ -16,6 +17,9 @@ class TradingEngine:
         take_profit = result['take_profit']
         
         price = data['Close'].iloc[-1]
+        atr = calculate_atr(data).iloc[-1]
+
+        logging.info(f"ATR: {atr:.5f} ({atr / 0.0001:.1f} pips)")
 
         open_trade = self.repository.get_open_trade(symbol)
 
@@ -26,6 +30,6 @@ class TradingEngine:
                 logging.info("Max positions reached, skipping trade")
                 return signal
             
-        self.executor.execute(signal, price, symbol, stop_loss, take_profit)
+        self.executor.execute(signal, price, symbol, stop_loss, take_profit, atr)
 
         return signal
