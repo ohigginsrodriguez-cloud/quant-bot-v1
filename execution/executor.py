@@ -2,6 +2,8 @@ from datetime import datetime, UTC
 from database.models.trade import Trade
 from core.signals import BUY, SELL, HOLD
 from core.positions import SHORT, LONG
+from utils.audit_logger import log_trade
+
 import logging
 
 
@@ -15,10 +17,21 @@ class Executor:
     def _calculate_pnl(self, side, entry, exit_price, size):
         return self.exit_manager._calculate_pnl(side, entry, exit_price, size)
 
-    def _close_and_update(self, trade_id, price, pnl):
+    def _close_and_update(self, trade_id, price, pnl, extra_info=None):
         try:
             self.repository.close_trade(trade_id, price, pnl)
             self.account.update_balance(pnl)
+
+            audit = {
+                "trade_id": trade_id,
+                "exit_price": price,
+                "pnl": pnl,
+                "balance_after": self.account.balance,
+                "timestamp": datetime.now(UTC).isoformat(),
+                **(extra_info or {})
+            }
+            log_trade(audit)
+
         except Exception as e:
             logging.error(f"Failed to close trade {trade_id}: {e}")
             raise
@@ -58,7 +71,12 @@ class Executor:
 
             if exit_type:
                 logging.info(f"{exit_type} HIT | PnL: {pnl:.2f}")
-                self._close_and_update(trade_id, price, pnl)
+                self._close_and_update(trade_id, price, pnl, extra_info={
+                    "symbol": symbol,
+                    "side": side,
+                    "entry_price": entry_price,
+                    "reason": exit_type
+                })
                 return
 
             if signal == HOLD:
@@ -69,7 +87,12 @@ class Executor:
             if side == LONG and signal == SELL:
                 pnl = self._calculate_pnl(LONG, entry_price, price, size)
                 logging.info(f"Closing LONG | PnL: {pnl:.2f}")
-                self._close_and_update(trade_id, price, pnl)
+                self._close_and_update(trade_id, price, pnl, extra_info={
+                    "symbol": symbol,
+                    "side": side,
+                    "entry_price": entry_price,
+                    "reason": "REVERSAL"
+                })
 
                 new_size = self.risk_manager.calculate_position_size(self.account.balance, price, stop_loss)
                 logging.info(f"Reversing to SHORT | Size: {new_size:.2f} lots")
@@ -80,7 +103,12 @@ class Executor:
             if side == SHORT and signal == BUY:
                 pnl = self._calculate_pnl(SHORT, entry_price, price, size)
                 logging.info(f"Closing SHORT | PnL: {pnl:.2f}")
-                self._close_and_update(trade_id, price, pnl)
+                self._close_and_update(trade_id, price, pnl, extra_info={
+                "symbol": symbol,
+                "side": side,
+                "entry_price": entry_price,
+                "reason": "REVERSAL"
+                })
 
                 new_size = self.risk_manager.calculate_position_size(self.account.balance, price, stop_loss)
                 logging.info(f"Reversing to LONG | Size: {new_size:.2f} lots")
