@@ -41,6 +41,6 @@ strategy = VolatilityStrategy(PARAMS)
 engine = BacktestEngine(strategy, initial_balance=10000, warmup=WARMUP, market_type=MARKET)
 
 logging.info("Running backtest...")
-metrics, closed_trades = engine.run(data)
-
+metrics, closed_trades, equity_curve = engine.run(data)
 print_report(metrics, closed_trades)
+logging.info(f"Equity curve points: {len(equity_curve)}")
