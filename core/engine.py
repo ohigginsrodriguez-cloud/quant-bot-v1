@@ -1,5 +1,7 @@
 from indicators.atr import calculate_atr
 from utils.validators import validate_signal
+from indicators.volatility import calculate_volatility
+from indicators.bollinger_bands import calculate_bollinger
 import logging
 
 class TradingEngine:
@@ -11,7 +13,18 @@ class TradingEngine:
         self.repository = repository
 
     def run(self, data, symbol):
-        result = self.strategy.generate_signal(data)
+
+        if len(data) < 3:
+            logging.warning("Not enogh data")
+            return None
+
+        data = data.copy()
+        data['ATR'] = calculate_atr(data)
+        data['VOL'] = calculate_volatility(data['Close'], window=self.strategy.params['window'])
+        data['BB_LOWER'], data['BB_UPPER'] = calculate_bollinger(data['Close'])
+
+        idx = -2
+        result = self.strategy.generate_signal(data, idx)
 
         if not validate_signal(result):
             logging.error("Strategy returned invalid signal format")
@@ -21,8 +34,8 @@ class TradingEngine:
         stop_loss = result['stop_loss']
         take_profit = result['take_profit']
         
-        price = data['Close'].iloc[-1]
-        atr = calculate_atr(data).iloc[-1]
+        price = data['Close'].iloc[idx]
+        atr = data['ATR'].iloc[idx]
 
         logging.info(f"ATR: {atr:.5f} ({atr / 0.0001:.1f} pips)")
 
