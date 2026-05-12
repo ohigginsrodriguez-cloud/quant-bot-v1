@@ -1,7 +1,8 @@
 import pandas as pd
 import logging
 
-REQUIRED_COLUMNS = ['Open', 'High', 'Low', 'Close', 'Volume']
+REQUIRED_COLUMNS = ['Open', 'High', 'Low', 'Close']
+OPTIONAL_COLUMNS = ['Volume']
 
 
 def validate_dataframe(df, symbol=""):

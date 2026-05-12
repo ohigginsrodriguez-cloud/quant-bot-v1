@@ -13,7 +13,7 @@ from risk.risk_manager import RiskManager
 from portfolio.account import Account
 from core.exit_manager import Exitmanager
 
-def setup_logging(log_file="bol.log"):
+def setup_logging(log_file="bot.log"):
     create_directories()
     logging.basicConfig(
         level=logging.INFO,

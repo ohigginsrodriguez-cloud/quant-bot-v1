@@ -13,7 +13,7 @@ def calculate_metrics(closed_trades, initial_balance):
     winners = [p for p in pnls if p > 0]
     losers = [p for p in pnls if p <= 0]
 
-    win_rate = len(winners) / len(losers) * 100
+    win_rate = len(winners) / len(pnls) * 100
 
     profit_factor = (
         sum(winners) / abs(sum(losers))

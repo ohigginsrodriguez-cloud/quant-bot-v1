@@ -1,4 +1,5 @@
 from indicators.atr import calculate_atr
+from utils.validators import validate_signal
 import logging
 
 class TradingEngine:
@@ -11,6 +12,10 @@ class TradingEngine:
 
     def run(self, data, symbol):
         result = self.strategy.generate_signal(data)
+
+        if not validate_signal(result):
+            logging.error("Strategy returned invalid signal format")
+            return None
 
         signal = result['signal']
         stop_loss = result['stop_loss']
