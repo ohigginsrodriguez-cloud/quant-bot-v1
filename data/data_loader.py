@@ -2,6 +2,8 @@ import yfinance as yf
 import logging
 import pandas as pd
 
+from utils.validators import validate_dataframe
+
 def load_data(symbol, period, interval):
     try:
         df = yf.download(symbol, period=period, interval=interval, auto_adjust=True)
@@ -27,6 +29,10 @@ def load_data(symbol, period, interval):
             df['Volume'] = df['Volume'].replace(0, pd.NA)
 
         logging.info(f"Loaded {len(df)} candles for {symbol}")
+
+        if not validate_dataframe(df, symbol):
+            return None
+        
         return df
     
     except Exception as e:
